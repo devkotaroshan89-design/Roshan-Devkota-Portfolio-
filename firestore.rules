@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global reusable primitives
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "devkotaroshan89@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // ==========================================
+    // INQUIRIES: Client project lead submissions
+    // ==========================================
+    function isValidInquiry(data) {
+      return data.keys().hasAll(['name', 'email', 'service', 'message', 'createdAt']) &&
+        data.keys().hasOnly(['name', 'email', 'phone', 'service', 'message', 'source', 'createdAt', 'status']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.email is string && data.email.size() > 0 && data.email.size() <= 120 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+        data['service'] is string && data['service'].size() > 0 && data['service'].size() <= 60 &&
+        data.message is string && data.message.size() > 0 && data.message.size() <= 2000 &&
+        (!('source' in data) || (data.source is string && data.source.size() <= 50)) &&
+        (!('status' in data) || (data.status in ['new', 'reviewed', 'contacted', 'archived'])) &&
+        data.createdAt == request.time;
+    }
+
+    match /inquiries/{inquiryId} {
+      allow create: if isValidId(inquiryId) && isValidInquiry(incoming());
+      allow get, list, update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // CHAT SESSIONS: Visitor AI Chatbot
+    // ==========================================
+    function isValidChatSession(data) {
+      return data.keys().hasAll(['sessionId', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['sessionId', 'userId', 'userEmail', 'clientName', 'createdAt', 'updatedAt', 'lastMessage', 'messageCount']) &&
+        data.sessionId is string && data.sessionId.size() > 0 && data.sessionId.size() <= 128 &&
+        (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+        (!('userEmail' in data) || (data.userEmail is string && data.userEmail.size() <= 120)) &&
+        (!('clientName' in data) || (data.clientName is string && data.clientName.size() <= 100)) &&
+        (!('lastMessage' in data) || (data.lastMessage is string && data.lastMessage.size() <= 1000)) &&
+        (!('messageCount' in data) || (data.messageCount is number && data.messageCount >= 0));
+    }
+
+    match /chat_sessions/{sessionId} {
+      allow get: if isValidId(sessionId);
+      allow list: if isAdmin();
+      allow create: if isValidId(sessionId) &&
+        (
+          isAdmin() ||
+          (
+            isValidChatSession(incoming()) &&
+            incoming().sessionId == sessionId &&
+            incoming().createdAt == request.time &&
+            incoming().updatedAt == request.time
+          )
+        );
+      allow update: if isValidId(sessionId) &&
+        (
+          isAdmin() ||
+          (
+            isValidChatSession(incoming()) &&
+            incoming().sessionId == existing().sessionId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+      allow delete: if isAdmin();
+
+      // ==========================================
+      // CHAT MESSAGES: Turns in the conversation
+      // ==========================================
+      function isValidChatMessage(data) {
+        return data.keys().hasAll(['sender', 'text', 'timestamp']) &&
+          data.keys().hasOnly(['sender', 'text', 'timestamp']) &&
+          (data.sender == 'user' || data.sender == 'assistant') &&
+          data.text is string && data.text.size() > 0 && data.text.size() <= 3000 &&
+          data.timestamp == request.time;
+      }
+
+      match /messages/{messageId} {
+        allow get, list: if isValidId(sessionId) && (exists(/databases/$(database)/documents/chat_sessions/$(sessionId)) || isAdmin());
+        allow create: if isValidId(sessionId) && isValidId(messageId) &&
+          (
+            isAdmin() ||
+            (
+              exists(/databases/$(database)/documents/chat_sessions/$(sessionId)) &&
+              isValidChatMessage(incoming())
+            )
+          );
+        allow update, delete: if isAdmin();
+      }
+    }
+  }
+}

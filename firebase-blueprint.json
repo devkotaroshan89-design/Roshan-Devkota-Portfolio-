@@ -1,0 +1,138 @@
+{
+  "entities": {
+    "Inquiry": {
+      "title": "Inquiry",
+      "description": "Client project inquiry or brief submitted via the portfolio",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of client or prospective lead",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Work email address",
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "description": "WhatsApp or direct contact number",
+          "maxLength": 30
+        },
+        "service": {
+          "type": "string",
+          "description": "Selected multimedia production service category",
+          "maxLength": 60
+        },
+        "message": {
+          "type": "string",
+          "description": "Detailed project brief or inquiry requirements",
+          "maxLength": 2000
+        },
+        "source": {
+          "type": "string",
+          "description": "Origin of inquiry (e.g. portfolio_terminal, ai_chat_dispatch)",
+          "maxLength": 50
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of submission"
+        },
+        "status": {
+          "type": "string",
+          "description": "Workflow review status",
+          "enum": ["new", "reviewed", "contacted", "archived"]
+        }
+      },
+      "required": ["name", "email", "service", "message", "createdAt"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "Visitor session metadata for AI Chatbot conversations",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Unique session identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Authenticated user ID or anonymous visitor token",
+          "maxLength": 128
+        },
+        "userEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Authenticated user email if available",
+          "maxLength": 120
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Client display name",
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Session creation server timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last activity timestamp"
+        },
+        "lastMessage": {
+          "type": "string",
+          "description": "Excerpt of most recent message",
+          "maxLength": 1000
+        },
+        "messageCount": {
+          "type": "number",
+          "description": "Total number of messages in session"
+        }
+      },
+      "required": ["sessionId", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message exchanged in an AI chat session",
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "description": "Role of message author",
+          "enum": ["user", "assistant"]
+        },
+        "text": {
+          "type": "string",
+          "description": "Message content",
+          "maxLength": 3000
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of message"
+        }
+      },
+      "required": ["sender", "text", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/inquiries/{inquiryId}": {
+      "schema": { "$ref": "#/entities/Inquiry" },
+      "description": "Portfolio contact inquiries and project brief transmissions"
+    },
+    "/chat_sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/ChatSession" },
+      "description": "AI chatbot multi-turn conversation sessions"
+    },
+    "/chat_sessions/{sessionId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Subcollection of messages inside a conversation session"
+    }
+  }
+}
