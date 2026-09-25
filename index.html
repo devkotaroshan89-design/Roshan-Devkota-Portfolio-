@@ -3856,7 +3856,186 @@
     });
   </script>
 
-  <!-- Roshan Devkota AI Dispatch & Firebase Integration -->
-  <script type="module" src="/src/chatbot.ts"></script>
+  ```html
+  <!-- ================= FLOATING CHATBOT WIDGET ================= -->
+  <!-- Launcher Button -->
+  <button id="chatbot-toggle-btn" class="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 to-violet-600 text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 border border-white/20">
+    <i class="fa-solid fa-comments text-xl" id="chatbot-toggle-icon"></i>
+  </button>
+
+  <!-- Chat Drawer / Modal Window -->
+  <div id="chatbot-window" class="fixed bottom-24 right-6 z-50 w-[90vw] max-w-sm sm:max-w-md h-[520px] rounded-3xl bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 shadow-2xl flex flex-col overflow-hidden hidden transition-all">
+    
+    <!-- Top Header -->
+    <div class="px-5 py-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 to-violet-600 flex items-center justify-center text-white font-black text-xs shadow-md shadow-cyan-500/20">
+          RD
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <h4 class="text-sm font-bold text-white tracking-wide">AI Production Dispatch</h4>
+            <span class="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Assistant</span>
+          </div>
+          <p class="text-[10px] text-emerald-400 font-mono flex items-center gap-1 mt-0.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Online • Ready to Answer
+          </p>
+        </div>
+      </div>
+      <button id="chatbot-close-btn" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs leading-relaxed">
+      <!-- Welcome Message -->
+      <div class="flex items-start gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-violet-600/30 border border-violet-500/40 text-violet-300 flex-shrink-0 flex items-center justify-center text-[10px] font-black">
+          RD
+        </div>
+        <div class="bg-slate-800 text-slate-200 p-3 rounded-2xl rounded-tl-sm border border-slate-700/60 max-w-[82%] shadow-sm">
+          Hi there! I am Roshan's AI production dispatch. Ask me about video editing turnarounds, camera operations, rates, or delivery codecs![cite: 7]
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Prompt Pills -->
+    <div class="px-4 py-2 border-t border-slate-800/60 bg-slate-950/40 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <button class="quick-chip whitespace-nowrap text-[10px] px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+        Turnaround times?[cite: 7]
+      </button>
+      <button class="quick-chip whitespace-nowrap text-[10px] px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+        What codecs do you deliver?[cite: 7]
+      </button>
+      <button class="quick-chip whitespace-nowrap text-[10px] px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+        Direct Contact[cite: 1, 2]
+      </button>
+    </div>
+
+    <!-- Input Form -->
+    <form id="chat-input-form" class="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+      <input 
+        type="text" 
+        id="chat-input-field" 
+        placeholder="Type a message or inquiry..." 
+        autocomplete="off"
+        class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition" 
+      />
+      <button type="submit" class="w-9 h-9 rounded-xl bg-gradient-to-r from-cyan-400 to-violet-600 text-white flex items-center justify-center hover:opacity-90 active:scale-95 transition flex-shrink-0">
+        <i class="fa-solid fa-paper-plane text-xs"></i>
+      </button>
+    </form>
+  </div>
+
+  <!-- Inline Native JavaScript Engine (No .ts file or bundler required) -->
+  <script>
+    const chatToggleBtn = document.getElementById('chatbot-toggle-btn');
+    const chatWindow = document.getElementById('chatbot-window');
+    const chatCloseBtn = document.getElementById('chatbot-close-btn');
+    const chatIcon = document.getElementById('chatbot-toggle-icon');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-input-form');
+    const chatInput = document.getElementById('chat-input-field');
+    const quickChips = document.querySelectorAll('.quick-chip');
+
+    // Toggle Chatbot Window Open/Close
+    chatToggleBtn.addEventListener('click', () => {
+      chatWindow.classList.toggle('hidden');
+      if (chatWindow.classList.contains('hidden')) {
+        chatIcon.className = "fa-solid fa-comments text-xl";
+      } else {
+        chatIcon.className = "fa-solid fa-chevron-down text-lg";
+        chatInput.focus();
+      }
+    });
+
+    chatCloseBtn.addEventListener('click', () => {
+      chatWindow.classList.add('hidden');
+      chatIcon.className = "fa-solid fa-comments text-xl";
+    });
+
+    // Append Message Bubbles
+    function appendMessage(sender, text) {
+      const isUser = sender === 'user';
+      const msgWrapper = document.createElement('div');
+      msgWrapper.className = isUser ? 'flex justify-end' : 'flex items-start gap-2.5';
+
+      if (isUser) {
+        msgWrapper.innerHTML = `
+          <div class="bg-gradient-to-r from-cyan-500 to-violet-600 text-white p-3 rounded-2xl rounded-tr-sm max-w-[82%] shadow-sm">
+            ${text}
+          </div>
+        `;
+      } else {
+        msgWrapper.innerHTML = `
+          <div class="w-7 h-7 rounded-lg bg-violet-600/30 border border-violet-500/40 text-violet-300 flex-shrink-0 flex items-center justify-center text-[10px] font-black">
+            RD
+          </div>
+          <div class="bg-slate-800 text-slate-200 p-3 rounded-2xl rounded-tl-sm border border-slate-700/60 max-w-[82%] shadow-sm">
+            ${text}
+          </div>
+        `;
+      }
+
+      chatMessages.appendChild(msgWrapper);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Knowledge Engine - Responds intelligently without crashing
+    function getAssistantResponse(prompt) {
+      const q = prompt.toLowerCase();
+
+      if (q.includes('hello') || q.includes('hi') || q.includes('hey') || q.includes('namaste')) {
+        return "Hey there! How can I help you today? Looking for commercial video editing, camera operations, or marketing campaigns?";[cite: 1, 2, 3]
+      }
+      if (q.includes('turnaround') || q.includes('time') || q.includes('fast') || q.includes('deliver') || q.includes('duration')) {
+        return "Typical turnaround is <strong>24–48 hours</strong> for vertical reels/shorts and <strong>3–5 business days</strong> for commercial video edits. Rush delivery is available on request!";[cite: 7]
+      }
+      if (q.includes('codec') || q.includes('format') || q.includes('resolution') || q.includes('export')) {
+        return "I deliver in <strong>ProRes 422 / 422 HQ</strong> and <strong>DNxHR</strong> for master files, and <strong>H.264 / H.265 (MP4)</strong> in 4K/1080p (9:16 vertical or 16:9 widescreen) with uncompressed 24-bit 48kHz audio.";[cite: 7]
+      }
+      if (q.includes('rate') || q.includes('price') || q.includes('cost') || q.includes('budget') || q.includes('milestone')) {
+        return "Rates depend on footage length, editing complexity, and turnaround. Standard terms are <strong>50% deposit</strong> to initiate production and <strong>50% upon final master delivery</strong>. Reach out directly for a custom quote!";
+      }
+      if (q.includes('contact') || q.includes('number') || q.includes('phone') || q.includes('email') || q.includes('hire') || q.includes('whatsapp')) {
+        return "You can reach Roshan directly at: <br/>• Phone: <a href='tel:+9779866144098' class='text-cyan-400 underline'>+977-9866144098</a><br/>• Email: <a href='mailto:devkotaroshan89@gmail.com' class='text-cyan-400 underline'>devkotaroshan89@gmail.com</a><br/>• WhatsApp: <a href='https://wa.me/9779866144098' target='_blank' class='text-emerald-400 underline font-semibold'>Direct Chat</a>";[cite: 1, 2]
+      }
+      if (q.includes('skill') || q.includes('software') || q.includes('tool') || q.includes('software')) {
+        return "Roshan specializes in Premiere Pro, DaVinci Resolve, Motion Design, Camera Operation, Graphic Design (Photoshop/Illustrator), and AITC-Certified Digital Marketing & SEO.";[cite: 1, 2, 3]
+      }
+
+      return "I can help connect you directly with Roshan for this project! You can chat with him right away on <a href='https://wa.me/9779866144098' target='_blank' class='text-emerald-400 underline'>WhatsApp</a> or email <a href='mailto:devkotaroshan89@gmail.com' class='text-cyan-400 underline'>devkotaroshan89@gmail.com</a>.";[cite: 1, 2]
+    }
+
+    // Form Submit Handler
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const userText = chatInput.value.trim();
+      if (!userText) return;
+
+      appendMessage('user', userText);
+      chatInput.value = '';
+
+      // Typing animation delay simulation
+      setTimeout(() => {
+        const reply = getAssistantResponse(userText);
+        appendMessage('bot', reply);
+      }, 400);
+    });
+
+    // Quick Chips Clicks
+    quickChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const text = chip.textContent.trim();
+        appendMessage('user', text);
+        setTimeout(() => {
+          const reply = getAssistantResponse(text);
+          appendMessage('bot', reply);
+        }, 350);
+      });
+    });
+  </script>
 </body>
 </html>
